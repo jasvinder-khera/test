@@ -5,37 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      html,
-      body {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 100%; height: 100%;
+        overflow: hidden; background: #000;
       }
       .video-container {
-        width: 100vw;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #000;
-        position: relative;
+        width: 100vw; height: 100vh;
+        display: flex; align-items: center; justify-content: center;
+        background: #000; position: relative;
       }
-      video {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
+      video { width: 100%; height: 100%; object-fit: contain; }
 
       #soundHint {
         position: absolute;
-        bottom: 90px;
-        left: 50%;
+        bottom: 90px; left: 50%;
         transform: translateX(-50%);
         background: rgba(0, 0, 0, 0.75);
         color: #fff;
@@ -48,29 +32,18 @@
         transition: opacity 0.4s ease;
         animation: pulse 1.8s infinite;
       }
-      #soundHint.hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
+      #soundHint.hidden { opacity: 0; pointer-events: none; }
 
       @keyframes pulse {
-        0%,
-        100% {
-          transform: translateX(-50%) scale(1);
-        }
-        50% {
-          transform: translateX(-50%) scale(1.05);
-        }
+        0%, 100% { transform: translateX(-50%) scale(1); }
+        50%      { transform: translateX(-50%) scale(1.05); }
       }
 
-      /* ---- Custom play/pause button ---- */
       #playPauseBtn {
         position: absolute;
-        top: 50%;
-        left: 50%;
+        top: 50%; left: 50%;
         transform: translate(-50%, -50%);
-        width: 90px;
-        height: 90px;
+        width: 90px; height: 90px;
         border-radius: 50%;
         border: none;
         background: rgba(0, 0, 0, 0.55);
@@ -78,32 +51,24 @@
         font-size: 38px;
         line-height: 1;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         transition: opacity 0.3s ease, background 0.2s ease;
         z-index: 10;
         -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation; /* prevents double-tap zoom, cleans up touch handling */
       }
-      #playPauseBtn:hover {
-        background: rgba(0, 0, 0, 0.75);
-      }
-      #playPauseBtn.hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
+      #playPauseBtn:hover { background: rgba(0, 0, 0, 0.75); }
+      #playPauseBtn.hidden { opacity: 0; pointer-events: none; }
     </style>
   </head>
   <body>
     <div class="video-container">
-      <video id="video" autoplay muted playsinline >
+      <video id="video" autoplay muted playsinline controls>
         <source src="video.mp4" type="video/mp4" />
         Your browser does not support HTML5 video.
       </video>
 
-      <!-- Custom play/pause button -->
       <button id="playPauseBtn" aria-label="Play/Pause">⏸</button>
-
       <div id="soundHint">🔊 Tap anywhere for sound</div>
     </div>
 
@@ -112,60 +77,40 @@
       const hint = document.getElementById("soundHint");
       const playPauseBtn = document.getElementById("playPauseBtn");
 
-      // 1. Autoplay muted (works everywhere)
+      // 1. Autoplay muted
       video.play().catch((err) => console.log("Autoplay blocked:", err));
 
       // 2. Unmute on first interaction
       let audioEnabled = false;
-
       const enableAudio = () => {
         if (audioEnabled) return;
         audioEnabled = true;
-
         video.muted = false;
         video.volume = 1;
         video.play().catch((err) => console.log("Play error:", err));
-
         hint.classList.add("hidden");
-
-        [
-          "click",
-          "touchstart",
-          "touchend",
-          "keydown",
-          "pointerdown",
-          "scroll",
-        ].forEach((evt) => document.removeEventListener(evt, enableAudio));
+        ["click", "touchstart", "touchend", "keydown", "pointerdown", "scroll"]
+          .forEach((evt) => document.removeEventListener(evt, enableAudio));
       };
-
-      [
-        "click",
-        "touchstart",
-        "touchend",
-        "keydown",
-        "pointerdown",
-        "scroll",
-      ].forEach((evt) =>
-        document.addEventListener(evt, enableAudio, { passive: true }),
-      );
-
-      video.addEventListener("click", enableAudio);
+      ["click", "touchstart", "touchend", "keydown", "pointerdown", "scroll"]
+        .forEach((evt) => document.addEventListener(evt, enableAudio, { passive: true }));
       hint.addEventListener("click", enableAudio);
 
-      // ---- Play/Pause button logic ----
+      // ---- Play/Pause button ----
       const updateButton = () => {
         if (video.paused) {
           playPauseBtn.textContent = "▶";
           playPauseBtn.classList.remove("hidden");
         } else {
           playPauseBtn.textContent = "⏸";
-          // Hide the button while playing (still clickable via video area)
           playPauseBtn.classList.add("hidden");
         }
       };
 
+      // ✅ FIX: only listen for "click" — no touchstart duplicate
       const togglePlay = (e) => {
         e.stopPropagation();
+        e.preventDefault();
         if (video.paused) {
           video.play().catch((err) => console.log("Play error:", err));
         } else {
@@ -174,35 +119,26 @@
       };
 
       playPauseBtn.addEventListener("click", togglePlay);
-      playPauseBtn.addEventListener("touchstart", togglePlay, { passive: false });
 
-      // Keep button state in sync with the video
       video.addEventListener("play", updateButton);
       video.addEventListener("pause", updateButton);
       video.addEventListener("ended", updateButton);
 
-      // Show the button briefly when the user hovers/taps the video area
+      // Show button briefly on hover / touch of video area
       const container = document.querySelector(".video-container");
       let hideTimer;
-
       const showButtonTemporarily = () => {
-        if (video.paused) {
-          playPauseBtn.classList.remove("hidden");
-          return;
-        }
         playPauseBtn.classList.remove("hidden");
         clearTimeout(hideTimer);
-        hideTimer = setTimeout(() => {
-          if (!video.paused) playPauseBtn.classList.add("hidden");
-        }, 2000);
+        if (!video.paused) {
+          hideTimer = setTimeout(() => {
+            if (!video.paused) playPauseBtn.classList.add("hidden");
+          }, 2000);
+        }
       };
-
       container.addEventListener("mousemove", showButtonTemporarily);
-      container.addEventListener("touchstart", showButtonTemporarily, {
-        passive: true,
-      });
+      container.addEventListener("touchstart", showButtonTemporarily, { passive: true });
 
-      // Initial state
       updateButton();
     </script>
   </body>
