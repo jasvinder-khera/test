@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      .video-container {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+        position: relative;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      #soundHint {
+        position: absolute;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 30px;
+        font-family: -apple-system, system-ui, sans-serif;
+        font-size: 16px;
+        cursor: pointer;
+        user-select: none;
+        transition: opacity 0.4s ease;
+        animation: pulse 1.8s infinite;
+      }
+      #soundHint.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: translateX(-50%) scale(1);
+        }
+        50% {
+          transform: translateX(-50%) scale(1.05);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="video-container">
+      <video id="video" autoplay muted playsinline controls>
+        <source src="video.mp4" type="video/mp4" />
+        Your browser does not support HTML5 video.
+      </video>
+      <div id="soundHint">🔊 Tap anywhere for sound</div>
+    </div>
+
+    <script>
+      const video = document.getElementById("video");
+      const hint = document.getElementById("soundHint");
+
+      // 1. Autoplay muted (works everywhere)
+      video.play().catch((err) => console.log("Autoplay blocked:", err));
+
+      // 2. Unmute on first interaction
+      let audioEnabled = false;
+
+      const enableAudio = () => {
+        if (audioEnabled) return;
+        audioEnabled = true;
+
+        video.muted = false;
+        video.volume = 1;
+        video.play().catch((err) => console.log("Play error:", err));
+
+        hint.classList.add("hidden");
+
+        // Clean up all listeners
+        [
+          "click",
+          "touchstart",
+          "touchend",
+          "keydown",
+          "pointerdown",
+          "scroll",
+        ].forEach((evt) => document.removeEventListener(evt, enableAudio));
+      };
+
+      // Listen for a wide range of interactions (covers all platforms)
+      [
+        "click",
+        "touchstart",
+        "touchend",
+        "keydown",
+        "pointerdown",
+        "scroll",
+      ].forEach((evt) =>
+        document.addEventListener(evt, enableAudio, { passive: true }),
+      );
+
+      // Also attach to the video + hint directly (in case events don't bubble)
+      video.addEventListener("click", enableAudio);
+      hint.addEventListener("click", enableAudio);
+    </script>
+  </body>
+</html>
