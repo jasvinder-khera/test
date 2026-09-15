@@ -19,11 +19,11 @@
 
       #soundHint {
         position: absolute;
-        bottom: 90px; left: 50%;
+        bottom: 160px; left: 50%;
         transform: translateX(-50%);
         background: rgba(0, 0, 0, 0.75);
         color: #fff;
-        text-align:center;
+        text-align: center;
         padding: 12px 24px;
         border-radius: 30px;
         font-family: -apple-system, system-ui, sans-serif;
@@ -40,11 +40,19 @@
         50%      { transform: translateX(-50%) scale(1.05); }
       }
 
-      /* Floating play/pause button — bottom-right corner */
-      #playPauseBtn {
+      /* Floating bottom bar — holds both buttons, centered */
+      .controls-bar {
         position: absolute;
-        bottom: 80px;          /* lift above the native controls bar */
-        right: 24px;           /* stick to the right edge */
+        bottom: 80px;              /* lift above native controls */
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 16px;
+        z-index: 10;
+      }
+
+      /* Shared style for both floating buttons */
+      .float-btn {
         width: 64px; height: 64px;
         border-radius: 50%;
         border: none;
@@ -55,15 +63,14 @@
         cursor: pointer;
         display: flex; align-items: center; justify-content: center;
         transition: opacity 0.3s ease, transform 0.15s ease, background 0.2s ease;
-        z-index: 10;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
         backdrop-filter: blur(6px);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
       }
-      #playPauseBtn:hover { background: rgba(0, 0, 0, 0.8); }
-      #playPauseBtn:active { transform: scale(0.9); }
-      #playPauseBtn.hidden { opacity: 0; pointer-events: none; }
+      .float-btn:hover { background: rgba(0, 0, 0, 0.8); }
+      .float-btn:active { transform: scale(0.9); }
+      .float-btn.hidden { opacity: 0; pointer-events: none; }
     </style>
   </head>
   <body>
@@ -73,7 +80,11 @@
         Your browser does not support HTML5 video.
       </video>
 
-      <button id="playPauseBtn" aria-label="Play/Pause">⏸</button>
+      <div class="controls-bar">
+        <button id="playPauseBtn" class="float-btn" aria-label="Play/Pause">⏸</button>
+        <button id="muteBtn" class="float-btn" aria-label="Mute/Unmute">🔇</button>
+      </div>
+
       <div id="soundHint">🔊 Tap anywhere for sound</div>
     </div>
 
@@ -81,6 +92,7 @@
       const video = document.getElementById("video");
       const hint = document.getElementById("soundHint");
       const playPauseBtn = document.getElementById("playPauseBtn");
+      const muteBtn = document.getElementById("muteBtn");
 
       // 1. Autoplay muted
       video.play().catch((err) => console.log("Autoplay blocked:", err));
@@ -94,6 +106,7 @@
         video.volume = 1;
         video.play().catch((err) => console.log("Play error:", err));
         hint.classList.add("hidden");
+        updateMuteButton();
         ["click", "touchstart", "touchend", "keydown", "pointerdown", "scroll"]
           .forEach((evt) => document.removeEventListener(evt, enableAudio));
       };
@@ -128,22 +141,48 @@
       video.addEventListener("pause", updateButton);
       video.addEventListener("ended", updateButton);
 
-      // Show button briefly on hover / touch of video area
+      // ---- Mute / Unmute button ----
+      const updateMuteButton = () => {
+        if (video.muted || video.volume === 0) {
+          muteBtn.textContent = "🔇";
+        } else {
+          muteBtn.textContent = "🔊";
+        }
+        muteBtn.classList.remove("hidden");
+      };
+
+      const toggleMute = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        video.muted = !video.muted;
+        updateMuteButton();
+      };
+
+      muteBtn.addEventListener("click", toggleMute);
+      video.addEventListener("volumechange", updateMuteButton);
+
+      // Show both buttons briefly on hover / touch of video area
       const container = document.querySelector(".video-container");
       let hideTimer;
       const showButtonTemporarily = () => {
         playPauseBtn.classList.remove("hidden");
+        muteBtn.classList.remove("hidden");
         clearTimeout(hideTimer);
         if (!video.paused) {
           hideTimer = setTimeout(() => {
             if (!video.paused) playPauseBtn.classList.add("hidden");
+            // keep mute button visible always
           }, 2000);
         }
       };
       container.addEventListener("mousemove", showButtonTemporarily);
       container.addEventListener("touchstart", showButtonTemporarily, { passive: true });
 
+      // Initial state
       updateButton();
+      updateMuteButton();
+      // Mute button stays visible always (it reflects current audio state)
+      muteBtn.classList.remove("hidden");
     </script>
   </body>
 </html>
