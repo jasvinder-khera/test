@@ -39,25 +39,29 @@
         50%      { transform: translateX(-50%) scale(1.05); }
       }
 
+      /* Floating play/pause button — bottom-right corner */
       #playPauseBtn {
         position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 90px; height: 90px;
+        bottom: 80px;          /* lift above the native controls bar */
+        right: 24px;           /* stick to the right edge */
+        width: 64px; height: 64px;
         border-radius: 50%;
         border: none;
-        background: rgba(0, 0, 0, 0.55);
+        background: rgba(0, 0, 0, 0.6);
         color: #fff;
-        font-size: 38px;
+        font-size: 26px;
         line-height: 1;
         cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        transition: opacity 0.3s ease, background 0.2s ease;
+        transition: opacity 0.3s ease, transform 0.15s ease, background 0.2s ease;
         z-index: 10;
         -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation; /* prevents double-tap zoom, cleans up touch handling */
+        touch-action: manipulation;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
       }
-      #playPauseBtn:hover { background: rgba(0, 0, 0, 0.75); }
+      #playPauseBtn:hover { background: rgba(0, 0, 0, 0.8); }
+      #playPauseBtn:active { transform: scale(0.9); }
       #playPauseBtn.hidden { opacity: 0; pointer-events: none; }
     </style>
   </head>
@@ -107,7 +111,6 @@
         }
       };
 
-      // ✅ FIX: only listen for "click" — no touchstart duplicate
       const togglePlay = (e) => {
         e.stopPropagation();
         e.preventDefault();
