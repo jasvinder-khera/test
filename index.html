@@ -40,10 +40,9 @@
         50%      { transform: translateX(-50%) scale(1.05); }
       }
 
-      /* Floating bottom bar — holds both buttons, centered */
       .controls-bar {
         position: absolute;
-        bottom: 80px;              /* lift above native controls */
+        bottom: 80px;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
@@ -51,7 +50,6 @@
         z-index: 10;
       }
 
-      /* Shared style for both floating buttons */
       .float-btn {
         width: 64px; height: 64px;
         border-radius: 50%;
@@ -97,7 +95,7 @@
       // 1. Autoplay muted
       video.play().catch((err) => console.log("Autoplay blocked:", err));
 
-      // 2. Unmute on first interaction
+      // 2. Unmute on first interaction ANYWHERE (except on our buttons)
       let audioEnabled = false;
       const enableAudio = () => {
         if (audioEnabled) return;
@@ -126,6 +124,7 @@
       };
 
       const togglePlay = (e) => {
+        // Stop the tap from bubbling up to document → enableAudio
         e.stopPropagation();
         e.preventDefault();
         if (video.paused) {
@@ -136,6 +135,10 @@
       };
 
       playPauseBtn.addEventListener("click", togglePlay);
+      // Block the earlier touch events from reaching document listeners
+      ["touchstart", "touchend", "pointerdown"].forEach((evt) =>
+        playPauseBtn.addEventListener(evt, (e) => e.stopPropagation(), { passive: true })
+      );
 
       video.addEventListener("play", updateButton);
       video.addEventListener("pause", updateButton);
@@ -159,6 +162,10 @@
       };
 
       muteBtn.addEventListener("click", toggleMute);
+      ["touchstart", "touchend", "pointerdown"].forEach((evt) =>
+        muteBtn.addEventListener(evt, (e) => e.stopPropagation(), { passive: true })
+      );
+
       video.addEventListener("volumechange", updateMuteButton);
 
       // Show both buttons briefly on hover / touch of video area
@@ -171,7 +178,6 @@
         if (!video.paused) {
           hideTimer = setTimeout(() => {
             if (!video.paused) playPauseBtn.classList.add("hidden");
-            // keep mute button visible always
           }, 2000);
         }
       };
@@ -181,8 +187,6 @@
       // Initial state
       updateButton();
       updateMuteButton();
-      // Mute button stays visible always (it reflects current audio state)
-      muteBtn.classList.remove("hidden");
     </script>
   </body>
 </html>
